@@ -17,7 +17,8 @@
       "Bash(curl:*)",
       "WebSearch",
       "Bash(tar:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(git add:*)"
     ],
     "Deny": [
       "Edit(/node_modules/**/*)"

@@ -1,0 +1,10 @@
+在当前 proxy 文件夹下生成一个代理项目，用来代理 claude 的网络请求，并且将请求的详细入参出参打印出来。我当前配置为
+
+"env": {
+    "ANTHROPIC_BASE_URL": "https://ark.cn-beijing.volces.com/api/coding",
+    "ANTHROPIC_AUTH_TOKEN": "c259d3bd-e5b0-4687-b161-97aa8a6bf320",
+    "API_TIMEOUT_MS": "600000",
+    "ANTHROPIC_MODEL": "ark-code-latest",
+  }
+
+代理项目使用 nodejs + express 实现
