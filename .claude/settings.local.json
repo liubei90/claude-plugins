@@ -1,28 +1,7 @@
 {
   "permissions": {
-    "allow": [
-      "Bash(npm:*)",
-      "Edit(/**/*)",
-      "Read(/**/*)",
-      "Bash(tree:*)",
-      "Bash(bash:*)",
-      "Bash(mkdir:*)",
-      "Bash(cd:*)",
-      "Bash(chmod:*)",
-      "Bash(timeout:*)",
-      "Bash(npx:*)",
-      "Bash(cat:*)",
-      "Bash(./scripts/*.sh:*)",
-      "Bash(./scripts/*.cmd:*)",
-      "Bash(curl:*)",
-      "WebSearch",
-      "Bash(tar:*)",
-      "Bash(node:*)",
-      "Bash(git add:*)"
-    ],
-    "Deny": [
-      "Edit(/node_modules/**/*)"
-    ]
+    "allow": ["Bash", "Edit", "Read", "WebSearch"],
+    "Deny": ["Edit(/node_modules/**/*)"]
   },
   "hooks": {
     "Stop": [
