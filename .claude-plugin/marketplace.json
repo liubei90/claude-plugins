@@ -1,0 +1,17 @@
+{
+  "name": "lb-marketplace",
+  "description": "自用插件合集市场",
+  "marketplace": true,
+  "owner": {
+    "name": "lb",
+    "email": ""
+  },
+  "plugins": [
+    {
+      "name": "cc-plugins",
+      "source": "./",
+      "description": "自用插件合集市场",
+      "version": "0.0.1"
+    }
+  ]
+}
