@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ./hooks/windows-notification.sh -Title \"Claude Code\" -Message \"任务已完成\"",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/windows-notification.ps1 -Title \"Claude Code\" -Message \"任务已完成\"",
             "timeout": 10
           }
         ]
@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ./hooks/windows-notification.sh -Title \"Claude Code\" -Message \"需要权限审批\"",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/windows-notification.ps1 -Title \"Claude Code\" -Message \"需要权限审批\"",
             "timeout": 10
           }
         ]
@@ -27,7 +27,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ./hooks/windows-notification.sh -Title \"Claude Code\" -Message \"等待你的输入\"",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/windows-notification.ps1 -Title \"Claude Code\" -Message \"等待你的输入\"",
             "timeout": 10
           }
         ]
