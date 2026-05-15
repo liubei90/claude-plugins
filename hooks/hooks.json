@@ -2,14 +2,10 @@
   "hooks": {
     "Stop": [
       {
-        "hooks": [
-          {
-            "type": "command",
-            "//command": "powershell.exe -ExecutionPolicy Bypass -File \"${CLAUDE_PLUGIN_ROOT}/hooks/windows-notification.ps1\" -Title \"Claude Code\" -Message \"任务已完成\"",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/windows-notification.sh -Title \"Claude Code\" -Message \"任务已完成\"",
-            "timeout": 10
-          }
-        ]
+        "type": "command",
+        "//command": "powershell.exe -ExecutionPolicy Bypass -File \"${CLAUDE_PLUGIN_ROOT}/hooks/windows-notification.ps1\" -Title \"Claude Code\" -Message \"任务已完成\"",
+        "command": "${CLAUDE_PLUGIN_ROOT}/hooks/windows-notification.sh -Title \"Claude Code\" -Message \"任务已完成\"",
+        "timeout": 10
       }
     ],
     "Notification": [
