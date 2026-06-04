@@ -1,6 +1,9 @@
 ---
 name: react-modal
 description: 根据用户提供的编辑弹窗需求创建基于 antd Modal + Form 组件的编辑弹窗. 在用户在基于 react + antd 的项目中，编写新编辑弹窗，添加和修改弹窗编辑字段时使用。
+context: fork
+agent: general-purpose
+permissions: Read,Write,Bash
 ---
 
 ## 代码模板
