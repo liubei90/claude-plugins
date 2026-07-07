@@ -159,8 +159,7 @@ permissions: WebFetch,Fetch,Read,Bash
 yapi 服务调用例子
 
 ```
-http://10.10.48.2:30001/api/interface/list?token=59cfde22eb042cd19c5a55f93bacc23e6fb78ac5264097546dbf9f830ef89a1d&page=1&limit=1000
+http://<your-host>/api/interface/list?token=<your-token>&page=1&limit=1000
 
-http://10.10.48.2:30001/api/interface/get?token=59cfde22eb042cd19c5a55f93bacc23e6fb78ac5264097546dbf9f830ef89a1d&id=30998
-
+http://<your-host>/api/interface/get?token=<your-token>&id=<interface-id>
 ```
