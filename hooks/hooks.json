@@ -3,11 +3,6 @@
     "Stop": [
       {
         "hooks": [
-          {
-            "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/windows-notification.sh -Title \"Claude Code\" -Message \"任务已完成\"",
-            "timeout": 10
-          }
         ]
       }
     ],
@@ -24,13 +19,7 @@
       },
       {
         "matcher": "idle_prompt",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/windows-notification.sh -Title \"Claude Code\" -Message \"等待你的输入\"",
-            "timeout": 10
-          }
-        ]
+        "hooks": []
       }
     ]
   }
