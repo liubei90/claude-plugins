@@ -21,6 +21,7 @@ claude plugin add ~/.claude-plugins/cc-plugins
 | Skill | 触发条件 | 说明 |
 |-------|---------|------|
 | [code-archaeologist](skills/code-archaeologist/) | 分析仓库历史、分支策略、CI/CD、开发流程 | 6 大分析模块，零依赖 |
+| [html-doc](skills/html-doc/) | 生成 HTML 文档/报告/页面 | html-effectiveness 风格，20+ 文档类型，自包含单文件 |
 | [react-modal](skills/react-modal/) | 编写 React + antd 编辑弹窗 | 模板代码生成 |
 | [send-email](skills/send-email/) | 发送邮件、通知、报告 | SMTP，支持多邮箱配置 |
 | [yapi-fetch](skills/yapi-fetch/) | 查询 YApi 接口文档 | 根据接口路径获取详细定义 |
@@ -39,6 +40,7 @@ claude plugin add ~/.claude-plugins/cc-plugins
   marketplace.json    # 市场配置
 skills/
   code-archaeologist/ # Git 仓库考古分析
+  html-doc/           # HTML 文档生成（含 33 个参考示例）
   react-modal/        # React 弹窗模板
   send-email/         # SMTP 邮件发送
   yapi-fetch/         # YApi 接口查询
