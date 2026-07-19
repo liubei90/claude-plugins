@@ -136,6 +136,7 @@ data["configs"].append(new_config)
 os.makedirs(os.path.dirname(config_file), exist_ok=True)
 with open(config_file, "w") as f:
     json.dump(data, f, indent=2, ensure_ascii=False)
+os.chmod(config_file, 0o600)  # 仅属主可读写，保护授权码
 
 print(f"配置 '{new_config['name']}' 已保存")
 PYEOF
@@ -172,11 +173,25 @@ def send_email(host, port, user, password, to_addrs, subject, body_html=None, bo
     if body_html:
         msg.attach(MIMEText(body_html, "html", "utf-8"))
 
-    with smtplib.SMTP_SSL(host, port) as server:
-        server.login(user, password)
-        server.sendmail(user, to_addrs if isinstance(to_addrs, list) else [to_addrs], msg.as_string())
+    to_list = to_addrs if isinstance(to_addrs, list) else [to_addrs]
 
-    print(f"邮件已发送至: {to_addrs}")
+    # 465 用 SSL 直连；587/25 等用明文 + STARTTLS 升级
+    try:
+        if int(port) == 465:
+            server = smtplib.SMTP_SSL(host, port, timeout=30)
+        else:
+            server = smtplib.SMTP(host, port, timeout=30)
+            server.starttls()
+        with server:
+            server.login(user, password)
+            server.sendmail(user, to_list, msg.as_string())
+        print(f"邮件已发送至: {', '.join(to_list)}")
+    except smtplib.SMTPAuthenticationError as e:
+        raise RuntimeError(f"SMTP 认证失败（检查账号/授权码）: {e}") from e
+    except smtplib.SMTPException as e:
+        raise RuntimeError(f"SMTP 发送失败: {e}") from e
+    except Exception as e:
+        raise RuntimeError(f"邮件发送异常: {e}") from e
 ```
 
 ## 常用 SMTP 配置参考
@@ -198,13 +213,21 @@ def send_email(host, port, user, password, to_addrs, subject, body_html=None, bo
 - **测试连接**：使用某条配置尝试连接 SMTP 服务器，验证凭证是否有效
 
 ```bash
-# 测试 SMTP 连接
+# 测试 SMTP 连接（465 走 SSL，其他端口走 STARTTLS）
 python3 << 'PYEOF'
 import smtplib
-s = smtplib.SMTP_SSL("smtp_host", 465)
-s.login("user", "pass")
-print("连接成功")
-s.quit()
+host, port, user, pwd = "smtp_host", 465, "user", "pass"
+try:
+    if int(port) == 465:
+        s = smtplib.SMTP_SSL(host, port, timeout=15)
+    else:
+        s = smtplib.SMTP(host, port, timeout=15)
+        s.starttls()
+    s.login(user, pwd)
+    print("连接成功")
+    s.quit()
+except Exception as e:
+    print(f"连接失败: {e}")
 PYEOF
 ```
 
@@ -212,5 +235,5 @@ PYEOF
 
 - **禁止硬编码凭证**：所有敏感信息来自配置文件或用户输入
 - **禁止静默失败**：发送失败必须输出完整错误信息
-- **配置文件权限**：创建后建议设置 `chmod 600`，防止其他用户读取
+- **配置文件权限**：保存时自动 `chmod 600`，防止其他用户读取授权码
 - **授权码非密码**：QQ/163 等邮箱需要的是 SMTP 授权码，不是登录密码

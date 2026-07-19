@@ -1,6 +1,9 @@
 ---
 name: html-doc
 description: 生成 html-effectiveness 风格的自包含 HTML 文档。当用户明确要求"生成 HTML 文档"、"输出 HTML 格式"、"做成 HTML 页面"、"用 HTML 写个报告/计划/说明"时触发。不要在其他文档生成场景（如 Markdown、Word、PDF）中自动触发。
+context: fork
+agent: general-purpose
+permissions: Read,Write
 ---
 
 # HTML 文档生成器

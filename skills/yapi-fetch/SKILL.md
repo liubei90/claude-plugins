@@ -21,14 +21,19 @@ permissions: WebFetch,Fetch,Read,Bash
 
 ## 执行步骤
 
+> 前置：归一化 `host`，去掉结尾的 `/`（如 `http://x:30001/` -> `http://x:30001`），避免拼接出 `//api`。
+
 1.  **第一步：获取列表**
     请求 `${host}/api/interface/list?token=${token}&page=1&limit=1000`。
+    若返回的 `data` 长度恰为 1000（可能未取全），继续翻页 `page=2,3,...` 直到取完。
 2.  **第二步：路径匹配**
-    在返回的 `data` 数组中，查找 `path` 字段等于 `${interface_path}` 的对象，并提取其 `_id`。
+    在返回的 `data` 数组中，查找 `path` 字段等于 `${interface_path}` 的对象，提取其 `_id`。
+    若未精确命中，按 `path` 包含 `${interface_path}` 做模糊匹配，列出候选供用户选择。
 3.  **第三步：获取详情**
     请求 `${host}/api/interface/get?token=${token}&id=${_id}`。
 4.  **第四步：输出结果**
     将完整的接口定义（字段、类型、备注）呈现给用户。
+    若一次查询多个接口，复用第一步已拉取的列表，避免重复请求。
 
 ## 关键限制
 

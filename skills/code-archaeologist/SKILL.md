@@ -32,8 +32,13 @@ echo "=== 基本信息 ==="
 git remote -v | head -1
 echo "首次提交: $(git log --reverse --format='%ai' | head -1)"
 echo "最近提交: $(git log -1 --format='%ai')"
-echo "总提交数: $(git log --oneline | wc -l)"
-echo "默认分支: $(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null || echo '未知')"
+echo "总提交数: $(git log --oneline | wc -l | tr -d ' ')"
+# 探测默认分支（兼容 main/master，origin/HEAD 未设置时自动回退）
+DEFAULT_BRANCH=$(git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null | sed 's#^origin/##')
+if [ -z "$DEFAULT_BRANCH" ]; then
+  git show-ref --verify --quiet refs/heads/main && DEFAULT_BRANCH=main || DEFAULT_BRANCH=master
+fi
+echo "默认分支: $DEFAULT_BRANCH"
 git rev-parse --is-shallow-repository
 ```
 
@@ -85,15 +90,17 @@ git log --pretty=format:"%ae" --name-only --since="6 months ago" | awk '/@/{auth
 
 ```bash
 # Conventional Commits 合规率
-echo -n "合规: "; git log --format='%s' --since="6 months ago" | grep -cE '^(feat|fix|docs|style|refactor|test|chore|perf|ci|build|revert)' || echo 0
-echo -n "总计: "; git log --oneline --since="6 months ago" | wc -l
+# 注意：grep -c 无匹配时已输出 0 且返回非零；勿加 "|| echo 0"（会重复输出 0），用 "|| true" 屏蔽退出码即可
+echo -n "合规: "; git log --format='%s' --since="6 months ago" | grep -cE '^(feat|fix|docs|style|refactor|test|chore|perf|ci|build|revert)' || true
+echo -n "总计: "; git log --oneline --since="6 months ago" | wc -l | tr -d ' '
 
 # 合并提交占比
-echo -n "Merge commits: "; git log --merges --oneline --since="6 months ago" | wc -l
-echo -n "Squash (PR#): "; git log --oneline --since="6 months ago" | grep -c ' (#' || echo 0
+echo -n "Merge commits: "; git log --merges --oneline --since="6 months ago" | wc -l | tr -d ' '
+echo -n "Squash (PR#): "; git log --oneline --since="6 months ago" | grep -c ' (#' || true
 
-# 提交规模分布
-git log --shortstat --since="6 months ago" | grep "file changed" | awk '{print $4}' | sort -n | awk 'BEGIN{c=0}{a[c++]=$1;s+=$1}END{if(c>0) print "median:"a[int(c/2)]" mean:"int(s/c)" total:"c}'
+# 提交规模分布（每次提交变更的文件数：中位数/均值/总提交数）
+# grep 同时匹配单复数 "file changed"/"files changed"；取 $1（文件数），原 $4 实为插入行数
+git log --shortstat --since="6 months ago" | grep -E 'files? changed' | awk '{print $1}' | sort -n | awk 'BEGIN{c=0}{a[c++]=$1;s+=$1}END{if(c>0) print "median:"a[int(c/2)]" mean:"int(s/c)" total:"c}'
 ```
 
 ---
@@ -114,11 +121,12 @@ echo "远程: $(git branch -r | wc -l)"
 ### 过期分支检测
 
 ```bash
-# 30 天无提交的分支
+# 30 天无提交的分支（用 git 原生 %ct 时间戳，规避 date -d 在 macOS BSD date 上不兼容）
+now=$(date +%s)
 for branch in $(git branch --format='%(refname:short)'); do
-  last=$(git log -1 --format='%ci' "$branch" 2>/dev/null)
-  if [ -n "$last" ]; then
-    age=$(( ($(date +%s) - $(date -d "$last" +%s)) / 86400 ))
+  last_epoch=$(git log -1 --format='%ct' "$branch" 2>/dev/null)
+  if [ -n "$last_epoch" ]; then
+    age=$(( (now - last_epoch) / 86400 ))
     [ "$age" -gt 30 ] && echo "${age}d $branch"
   fi
 done | sort -rn
@@ -129,8 +137,8 @@ done | sort -rn
 ```bash
 # 合并方式统计
 echo -n "Merge commits: "; git log --merges --oneline --since="6 months ago" | wc -l
-echo -n "Squash merges: "; git log --oneline --since="6 months ago" | grep -c ' (#' || echo 0
-echo -n "Linear (rebase): "; git log --no-merges --oneline --since="6 months ago" | wc -l
+echo -n "Squash merges: "; git log --oneline --since="6 months ago" | grep -c ' (#' || true
+echo -n "Linear (rebase): "; git log --no-merges --oneline --since="6 months ago" | wc -l | tr -d ' '
 
 # 合并消息样本
 git log --merges --format='%s' --since="6 months ago" | head -10
@@ -139,10 +147,12 @@ git log --merges --format='%s' --since="6 months ago" | head -10
 ### 分支用途识别
 
 ```bash
-# 每个分支相对 main 的 ahead/behind
-for branch in $(git branch --format='%(refname:short)' | grep -vE '^(main|master)$'); do
-  ahead=$(git rev-list --count main..$branch 2>/dev/null)
-  behind=$(git rev-list --count $branch..main 2>/dev/null)
+# 每个分支相对默认分支的 ahead/behind（$DEFAULT_BRANCH 来自第一步；单独执行时下方兜底探测）
+DEFAULT_BRANCH=${DEFAULT_BRANCH:-$(git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null | sed 's#^origin/##')}
+[ -z "$DEFAULT_BRANCH" ] && { git show-ref --verify --quiet refs/heads/main && DEFAULT_BRANCH=main || DEFAULT_BRANCH=master; }
+for branch in $(git branch --format='%(refname:short)' | grep -vx "$DEFAULT_BRANCH"); do
+  ahead=$(git rev-list --count $DEFAULT_BRANCH..$branch 2>/dev/null)
+  behind=$(git rev-list --count $branch..$DEFAULT_BRANCH 2>/dev/null)
   echo "$branch: +${ahead:-0}/-${behind:-0}"
 done
 ```
@@ -207,19 +217,23 @@ git log --oneline --since="6 months ago" -- .github/workflows/ .gitlab-ci.yml | 
 ### 分支模型识别
 
 ```bash
+# 探测默认分支（若第一步未设置）
+DEFAULT_BRANCH=${DEFAULT_BRANCH:-$(git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null | sed 's#^origin/##')}
+[ -z "$DEFAULT_BRANCH" ] && { git show-ref --verify --quiet refs/heads/main && DEFAULT_BRANCH=main || DEFAULT_BRANCH=master; }
+
 # GitFlow 指标
-echo -n "develop 分支: "; git branch -a | grep -c 'develop'
-echo -n "release/*: "; git branch -a | grep -cE 'release/'
-echo -n "hotfix/*: "; git branch -a | grep -cE 'hotfix/'
+echo -n "develop 分支: "; git branch -a | grep -c 'develop' || true
+echo -n "release/*: "; git branch -a | grep -cE 'release/' || true
+echo -n "hotfix/*: "; git branch -a | grep -cE 'hotfix/' || true
 
 # Trunk-based 指标
-echo -n "main 直接提交 (1mo): "; git log --oneline --first-parent --since="1 month ago" main 2>/dev/null | wc -l
+echo -n "$DEFAULT_BRANCH 直接提交 (1mo): "; git log --oneline --first-parent --since="1 month ago" $DEFAULT_BRANCH 2>/dev/null | wc -l | tr -d ' '
 
 # PR/MR 工作流
-echo -n "Pull Request merges: "; git log --merges --format='%s' --since="6 months ago" | grep -ci 'pull request' || echo 0
+echo -n "Pull Request merges: "; git log --merges --format='%s' --since="6 months ago" | grep -ci 'pull request' || true
 
 # 发布方式
-echo -n "Tags: "; git tag | wc -l
+echo -n "Tags: "; git tag | wc -l | tr -d ' '
 echo -n "Latest tag: "; git describe --tags --abbrev=0 2>/dev/null || echo "无"
 ```
 
@@ -227,10 +241,10 @@ echo -n "Latest tag: "; git describe --tags --abbrev=0 2>/dev/null || echo "无"
 
 ```bash
 for branch in $(git branch --format='%(refname:short)'); do
-  created=$(git log --reverse --format='%ci' "$branch" 2>/dev/null | head -1)
-  updated=$(git log -1 --format='%ci' "$branch" 2>/dev/null)
-  if [ -n "$created" ] && [ -n "$updated" ]; then
-    age=$(( ($(date -d "$updated" +%s) - $(date -d "$created" +%s)) / 86400 ))
+  created_epoch=$(git log --reverse --format='%ct' "$branch" 2>/dev/null | head -1)
+  updated_epoch=$(git log -1 --format='%ct' "$branch" 2>/dev/null)
+  if [ -n "$created_epoch" ] && [ -n "$updated_epoch" ]; then
+    age=$(( (updated_epoch - created_epoch) / 86400 ))
     echo "${age}d $branch"
   fi
 done | sort -rn | head -15
@@ -330,7 +344,8 @@ echo -n "含大写: "; echo "$branches" | grep -cE '[A-Z]'
 1. 大仓库用 `--since="6 months ago"` 限制范围，避免超时
 2. 浅克隆会隐藏历史，先检查 `git rev-parse --is-shallow-repository`
 3. Monorepo 用 `-- path/` 限定子目录
-4. 始终检查 `main` 和 `master` 两个可能的默认分支名
+4. 默认分支统一通过 `$DEFAULT_BRANCH` 变量引用（第一步已探测，兼容 main/master）；各模块若单独执行，顶部有兜底探测
 5. 远程分支需要 `git branch -a`，仅 `git branch` 只看本地
-6. macOS 上 GNU date 需要用 `gdate`，注意语法差异
-7. 建议要有数据支撑（数字、百分比），而非纯主观判断
+6. 时间计算统一用 git 原生 `%ct`（Unix 时间戳），规避 `date -d` 在 macOS BSD date 上不兼容的问题
+7. `grep -c` 无匹配时已输出 `0` 且返回非零退出码，**勿**加 `|| echo 0`（会重复输出），用 `|| true` 屏蔽退出码即可
+8. 建议要有数据支撑（数字、百分比），而非纯主观判断
